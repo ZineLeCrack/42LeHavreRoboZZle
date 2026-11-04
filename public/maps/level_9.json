@@ -1,0 +1,21 @@
+{
+	"map": [
+		"               ",
+		"       B       ",
+		"       g       ",
+		"       b       ",
+		"       b       ",
+		"   BgbbrbbgB   ",
+		"       b       ",
+		"       b       ",
+		"       g       ",
+		"       B       ",
+		"               "
+		],
+	"starting_pos": {
+		"x": 7,
+		"y": 5,
+		"dir": "down"
+	},
+	"functions": [4, 4]
+}
