@@ -1,5 +1,5 @@
 all:
 	@npm install
 
-run:
+run: all
 	@npm run dev

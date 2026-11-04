@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function Menu({ name, connected, queued, notice, onPlay, onCancel }) {
+export function Menu({ name, connected, queued, notice, onPlay, onSolo, onCancel }) {
   return (
     <div className="bg-[#2d2d2d] w-screen h-screen flex flex-col justify-center items-center gap-6 px-4 text-white">
       <h1 className="text-3xl font-semibold text-center">42 Le Havre RoboZZle</h1>
@@ -23,13 +23,22 @@ export function Menu({ name, connected, queued, notice, onPlay, onCancel }) {
           </button>
         </>
       ) : (
-        <button
-          onClick={onPlay}
-          disabled={!connected}
-          className="px-12 py-4 text-xl shadow-lg hover:shadow font-semibold bg-white rounded text-black hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Play
-        </button>
+        <div className="flex flex-col items-center gap-4">
+          <button
+            onClick={onPlay}
+            disabled={!connected}
+            className="px-12 py-4 text-xl shadow-lg hover:shadow font-semibold bg-white rounded text-black hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Play
+          </button>
+          <button
+            onClick={onSolo}
+            disabled={!connected}
+            className="px-12 py-3 text-lg shadow-lg hover:shadow font-semibold rounded bg-black/20 hover:bg-black/30 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Solo
+          </button>
+        </div>
       )}
     </div>
   );

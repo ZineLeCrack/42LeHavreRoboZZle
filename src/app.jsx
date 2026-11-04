@@ -82,7 +82,6 @@ export function App() {
           setQueued(false);
           setNotice("");
           setGame((prev) => {
-            // Pendant qu'on déplace le slider, on ignore les anciennes valeurs renvoyées par le serveur
             const keepLocalSpeed = prev && Date.now() - lastSpeedEdit.current < 400;
             return { ...msg, deltaTime: keepLocalSpeed ? prev.deltaTime : msg.deltaTime };
           });
@@ -188,6 +187,7 @@ export function App() {
               queued={queued}
               notice={notice}
               onPlay={() => send({ type: "join" })}
+              onSolo={() => send({ type: "solo" })}
               onCancel={() => send({ type: "cancel" })}
             />
           )}

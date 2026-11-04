@@ -49,8 +49,8 @@ async function readLevel(mapsDir, level) {
 }
 
 class Lobby {
-  constructor(playerA, playerB, mapsDir) {
-    this.players = [playerA, playerB];
+  constructor(players, mapsDir) {
+    this.players = players;
     this.mapsDir = mapsDir;
 
     this.level = 1;
@@ -372,9 +372,7 @@ async function resolveName(req, url) {
     ]);
     if (names && names[0])
       return shortName(names[0]);
-  } catch {
-
-  }
+  } catch {}
   return ip || 'player';
 }
 
@@ -384,7 +382,7 @@ export function attachGameServer(httpServer, { mapsDir }) {
 
   httpServer.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url, 'http://localhost');
-    if (!url.pathname.endsWith('/ws')) return; // laisse le HMR de Vite gérer le reste
+    if (!url.pathname.endsWith('/ws')) return;
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req, url));
   });
 
@@ -394,11 +392,10 @@ export function attachGameServer(httpServer, { mapsDir }) {
     player.queued = false;
   }
 
-  async function createLobby(a, b) {
-    const lobby = new Lobby(a, b, mapsDir);
-    a.lobby = lobby;
-    b.lobby = lobby;
-    console.log(`[robozzle] lobby created: ${a.name} & ${b.name}`);
+  async function createLobby(players) {
+    const lobby = new Lobby(players, mapsDir);
+    for (const p of players)
+      p.lobby = lobby;
 
     try {
       await lobby.loadLevel(1);
@@ -406,7 +403,7 @@ export function attachGameServer(httpServer, { mapsDir }) {
       console.error('[robozzle] cannot load level 1:', err.message);
       if (!lobby.closed) {
         lobby.closed = true;
-        for (const p of [a, b]) {
+        for (const p of players) {
           p.lobby = null;
           send(p, { type: 'error', message: `Unable to load level 1 (${err.message})` });
         }
@@ -424,7 +421,7 @@ export function attachGameServer(httpServer, { mapsDir }) {
       const b = queue.shift();
       a.queued = false;
       b.queued = false;
-      createLobby(a, b);
+      createLobby([a, b]);
     }
   }
 
@@ -454,8 +451,12 @@ export function attachGameServer(httpServer, { mapsDir }) {
             player.queued = true;
             queue.push(player);
             send(player, { type: 'queued' });
-            console.log(`[robozzle] ${player.name} is waiting for a teammate`);
             matchmake();
+            break;
+
+          case 'solo':
+            if (player.lobby || player.queued) return;
+            createLobby([player]);
             break;
 
           case 'cancel':
