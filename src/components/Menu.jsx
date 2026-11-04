@@ -1,23 +1,28 @@
 import React from 'react';
+import { Rocket, SPACE_BG } from './Sprites';
 
 export function Menu({ name, connected, queued, notice, onPlay, onSolo, onCancel }) {
   return (
-    <div className="bg-[#2d2d2d] w-screen h-screen flex flex-col justify-center items-center gap-6 px-4 text-white">
-      <h1 className="text-3xl font-semibold text-center">42 Le Havre RoboZZle</h1>
+    <div className="w-screen h-screen flex flex-col justify-center items-center gap-6 px-4 text-white" style={SPACE_BG}>
+      <Rocket angle={-45} className="w-28 h-28" />
 
-      <p className="text-gray-400 text-center">
+      <h1 className="text-4xl font-extrabold text-center tracking-tight bg-gradient-to-r from-amber-200 via-white to-sky-200 bg-clip-text text-transparent">
+        42 Le Havre RoboZZle
+      </h1>
+
+      <p className="px-4 py-1 rounded-full bg-white/10 ring-1 ring-white/10 text-sm text-slate-300 text-center">
         {connected ? `Connected as ${name}` : "Connecting to the server..."}
       </p>
 
-      {notice ? <p className="text-yellow-400 text-center">{notice}</p> : null}
+      {notice ? <p className="text-amber-300 text-center">{notice}</p> : null}
 
       {queued ? (
         <>
-          <i className="fa-solid fa-spinner fa-spin text-3xl"></i>
+          <i className="fa-solid fa-spinner fa-spin text-3xl text-amber-300"></i>
           <p className="text-lg text-center">Waiting for another player...</p>
           <button
             onClick={onCancel}
-            className="px-8 py-3 shadow-lg hover:shadow font-semibold rounded bg-black/20 hover:bg-black/30 text-white"
+            className="px-10 py-3 shadow-lg font-semibold rounded-2xl bg-white/10 ring-1 ring-white/20 hover:bg-white/20 transition-all"
           >
             Cancel
           </button>
@@ -27,14 +32,14 @@ export function Menu({ name, connected, queued, notice, onPlay, onSolo, onCancel
           <button
             onClick={onPlay}
             disabled={!connected}
-            className="px-12 py-4 text-xl shadow-lg hover:shadow font-semibold bg-white rounded text-black hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-14 py-4 text-xl font-bold rounded-2xl shadow-lg bg-gradient-to-r from-amber-300 to-orange-400 text-slate-900 hover:brightness-110 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             Play
           </button>
           <button
             onClick={onSolo}
             disabled={!connected}
-            className="px-12 py-3 text-lg shadow-lg hover:shadow font-semibold rounded bg-black/20 hover:bg-black/30 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-14 py-3 text-lg font-semibold rounded-2xl shadow-lg bg-white/10 ring-1 ring-white/20 hover:bg-white/20 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             Solo
           </button>

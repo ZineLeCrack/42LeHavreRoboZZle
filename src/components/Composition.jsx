@@ -9,7 +9,7 @@ export function Composition(props) {
           props.instance.instructions.length ?
           props.instance.instructions.map((func, indexFunc) => (
             <div key={indexFunc} style={`grid-template-columns: repeat(${func.length + 1}, 1fr);`} className="grid my-2 rounded gap-1 font-semibold text-xl select-none">
-              <div className="bg-blue-500 text-white rounded w-12 aspect-square flex items-center justify-center shadow-lg">F{indexFunc + 1}</div>
+              <div className="bg-gradient-to-br from-indigo-400 to-indigo-600 text-white rounded-xl w-12 aspect-square flex items-center justify-center shadow-lg ring-1 ring-white/20">F{indexFunc + 1}</div>
               {func.map((inst, indexInst) => (
                 <Tile
                   key={indexInst}

@@ -15,7 +15,7 @@ import {
 
 const NB_LEVEL = 15;
 const DEFAULT_DELTA = 420;
-const MIN_DELTA = 50;
+const MIN_DELTA = 25;
 const MAX_DELTA = 1500;
 const MAX_STACK_DEPTH = 500;
 

@@ -8,6 +8,7 @@ import { Toolbar } from './components/Toolbar'
 import { CallStack } from './components/CallStack'
 import { PopUp } from './components/PopUp'
 import { Menu } from './components/Menu'
+import { SPACE_BG } from './components/Sprites'
 import { messages } from './messages'
 
 export const THEME = false;
@@ -161,10 +162,10 @@ export function App() {
           {game ? (
             <>
               <PopUp active={!!game.popUp} setActive={() => {}} button={popUpContent.button} actionButton={closePopUp} game={null}>{popUpContent.text}</PopUp>
-              <div className="relative bg-[#2d2d2d] w-screen flex flex-row justify-center items-center h-screen px-2 gap-4 text-gray-800">
-                <div className="absolute top-2 left-3 right-3 flex justify-between items-center text-sm text-gray-300 z-10">
+              <div className="relative w-screen flex flex-row justify-center items-center h-screen px-2 gap-4 text-gray-800" style={SPACE_BG}>
+                <div className="absolute top-2 left-3 right-3 flex justify-between items-center text-sm text-indigo-200 z-10">
                   <span>{game.players.join(" & ")}</span>
-                  <button onClick={leaveGame} className="px-3 py-1 rounded bg-black/20 hover:bg-black/30 text-white">Quit</button>
+                  <button onClick={leaveGame} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 ring-1 ring-white/10 text-white transition-all">Quit</button>
                 </div>
                 <div className="flex flex-col justify-center items-center h-full w-full max-w-[500px]">
                   <Level level={game.level} setLevel={setLevel}></Level>
@@ -172,10 +173,6 @@ export function App() {
                   <Composition play={game.play} instance={game} onEdit={editTile} currentInst={game.currentInst}></Composition>
                   <Controls game={game} play={game.play} paused={game.paused} setPlay={setPlay} onReset={resetRun} data={game.data} setDeltaTime={setDeltaTime} deltaTime={game.deltaTime}></Controls>
                   <Toolbar functions={game.instructions} selected={selected} setSelected={setSelected}></Toolbar>
-                  <div className='rotate-[45deg]'/>
-                  <div className='rotate-[135deg]'/>
-                  <div className='rotate-[225deg]'/>
-                  <div className='rotate-[315deg]'/>
                 </div>
                 <CallStack stack={game.stack} instance={game}></CallStack>
               </div>
@@ -192,7 +189,7 @@ export function App() {
             />
           )}
         </div>
-        <div default className="w-screen h-screen flex justify-center items-center text-xl font-semibold text-white bg-[#2d2d2d]">
+        <div default className="w-screen h-screen flex justify-center items-center text-xl font-semibold text-white bg-[#0b1020]">
           <h1>404 : Not found</h1>
         </div>
       </Router>
