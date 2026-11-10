@@ -49,9 +49,10 @@ async function readLevel(mapsDir, level) {
 }
 
 class Lobby {
-  constructor(players, mapsDir) {
+  constructor(players, mapsDir, requeue) {
     this.players = players;
     this.mapsDir = mapsDir;
+    this.requeue = requeue;
 
     this.level = 1;
     this.instructions = [];
@@ -69,6 +70,10 @@ class Lobby {
     this.runId = 0;
     this.closed = false;
     this.busy = true;
+  }
+
+  get isTeam() {
+    return this.players.length > 1;
   }
 
   snapshot() {
@@ -104,21 +109,29 @@ class Lobby {
     this.data = structuredClone(data);
     this.stack = [];
     this.currentInst = { ...NO_INST };
+    for (const p of this.players)
+      p.level = level;
   }
 
   resetData() {
     this.data = structuredClone(this.startData);
   }
 
-  close(leaver) {
+  dissolve() {
     if (this.closed) return;
     this.closed = true;
     this.runId++;
     this.play = false;
     this.paused = false;
     this.wake();
-    for (const p of this.players) {
+    for (const p of this.players)
       p.lobby = null;
+  }
+
+  close(leaver) {
+    if (this.closed) return;
+    this.dissolve();
+    for (const p of this.players) {
       if (p !== leaver)
         send(p, { type: 'left', name: leaver.name });
     }
@@ -173,6 +186,10 @@ class Lobby {
 
       case 'popup': {
         if (!this.popUp) return;
+        if (this.popUp.type === 'win_level' && this.isTeam) {
+          this.requeue(this, this.popUp.level + 1);
+          return;
+        }
         this.popUp = null;
         this.resetData();
         this.broadcast();
@@ -180,7 +197,7 @@ class Lobby {
       }
 
       case 'setLevel': {
-        if (this.play || this.popUp) return;
+        if (this.isTeam || this.play || this.popUp) return;
         const level = Math.trunc(Number(msg.level));
         if (!(level >= 1 && level <= NB_LEVEL)) return;
         this.busy = true;
@@ -322,7 +339,13 @@ class Lobby {
     try {
       if (code === WIN) {
         const done = this.level;
-        if (done < NB_LEVEL) {
+        if (done >= NB_LEVEL)
+          this.popUp = { type: 'win_game', level: done };
+        else if (this.isTeam) {
+          for (const p of this.players)
+            p.level = done + 1;
+          this.popUp = { type: 'win_level', level: done };
+        } else {
           this.popUp = { type: 'win_level', level: done };
           try {
             await this.loadLevel(done + 1);
@@ -330,8 +353,7 @@ class Lobby {
             console.error(`[robozzle] cannot load level ${done + 1}:`, err.message);
             this.popUp = { type: 'win_game', level: done };
           }
-        } else
-          this.popUp = { type: 'win_game', level: done };
+        }
       } else if (code === FUNCTION_OVER)
         this.popUp = { type: 'function_over', level: this.level };
       else if (code === OUT_OF_MAP)
@@ -376,6 +398,10 @@ async function resolveName(req, url) {
   return ip || 'player';
 }
 
+function canPair(a, b) {
+  return a.level === b.level && a.lastMate !== b && b.lastMate !== a;
+}
+
 export function attachGameServer(httpServer, { mapsDir }) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
   const queue = [];
@@ -386,26 +412,48 @@ export function attachGameServer(httpServer, { mapsDir }) {
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req, url));
   });
 
+  function enqueue(player) {
+    player.queued = true;
+    queue.push(player);
+    send(player, { type: 'queued', level: player.level });
+  }
+
   function leaveQueue(player) {
     const i = queue.indexOf(player);
     if (i !== -1) queue.splice(i, 1);
     player.queued = false;
   }
 
+  function requeue(lobby, level) {
+    const players = lobby.players;
+    lobby.dissolve();
+    for (const p of players) {
+      p.level = level;
+      enqueue(p);
+    }
+    matchmake();
+  }
+
   async function createLobby(players) {
-    const lobby = new Lobby(players, mapsDir);
+    const lobby = new Lobby(players, mapsDir, requeue);
     for (const p of players)
       p.lobby = lobby;
 
+    if (players.length === 2) {
+      players[0].lastMate = players[1];
+      players[1].lastMate = players[0];
+    } else
+      players[0].lastMate = null;
+
     try {
-      await lobby.loadLevel(1);
+      await lobby.loadLevel(players[0].level);
     } catch (err) {
-      console.error('[robozzle] cannot load level 1:', err.message);
+      console.error(`[robozzle] cannot load level ${players[0].level}:`, err.message);
       if (!lobby.closed) {
         lobby.closed = true;
         for (const p of players) {
           p.lobby = null;
-          send(p, { type: 'error', message: `Unable to load level 1 (${err.message})` });
+          send(p, { type: 'error', message: `Unable to load level ${p.level} (${err.message})` });
         }
       }
       return;
@@ -416,17 +464,28 @@ export function attachGameServer(httpServer, { mapsDir }) {
   }
 
   function matchmake() {
-    while (queue.length >= 2) {
-      const a = queue.shift();
-      const b = queue.shift();
-      a.queued = false;
-      b.queued = false;
-      createLobby([a, b]);
+    let matched = true;
+    while (matched) {
+      matched = false;
+      for (let i = 0; i < queue.length && !matched; i++) {
+        for (let j = i + 1; j < queue.length; j++) {
+          if (!canPair(queue[i], queue[j])) continue;
+          const a = queue[i];
+          const b = queue[j];
+          queue.splice(j, 1);
+          queue.splice(i, 1);
+          a.queued = false;
+          b.queued = false;
+          createLobby([a, b]);
+          matched = true;
+          break;
+        }
+      }
     }
   }
 
   wss.on('connection', (ws, req, url) => {
-    const player = { ws, name: 'player', lobby: null, queued: false };
+    const player = { ws, name: 'player', lobby: null, queued: false, level: 1, lastMate: null };
     ws.on('error', () => {});
 
     const ready = resolveName(req, url).then((name) => {
@@ -448,9 +507,7 @@ export function attachGameServer(httpServer, { mapsDir }) {
         switch (msg.type) {
           case 'join':
             if (player.lobby || player.queued) return;
-            player.queued = true;
-            queue.push(player);
-            send(player, { type: 'queued' });
+            enqueue(player);
             matchmake();
             break;
 

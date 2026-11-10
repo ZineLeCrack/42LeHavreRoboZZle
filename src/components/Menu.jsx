@@ -1,7 +1,7 @@
 import React from 'react';
 import { Rocket, SPACE_BG } from './Sprites';
 
-export function Menu({ name, connected, queued, notice, onPlay, onSolo, onCancel }) {
+export function Menu({ name, connected, queued, queueLevel, notice, onPlay, onSolo, onCancel }) {
   return (
     <div className="w-screen h-screen flex flex-col justify-center items-center gap-6 px-4 text-white" style={SPACE_BG}>
       <Rocket angle={-45} className="w-28 h-28" />
@@ -19,7 +19,11 @@ export function Menu({ name, connected, queued, notice, onPlay, onSolo, onCancel
       {queued ? (
         <>
           <i className="fa-solid fa-spinner fa-spin text-3xl text-amber-300"></i>
-          <p className="text-lg text-center">Waiting for another player...</p>
+          <p className="text-lg text-center">Looking for a teammate for level {queueLevel}...</p>
+          <p className="max-w-sm px-4 py-2 rounded-2xl bg-white/10 ring-1 ring-white/10 text-sm text-slate-200 text-center">
+            <i className="fa-solid fa-handshake-angle text-amber-300 mr-2"></i>
+            While you wait, feel free to give a hand to the other players!
+          </p>
           <button
             onClick={onCancel}
             className="px-10 py-3 shadow-lg font-semibold rounded-2xl bg-white/10 ring-1 ring-white/20 hover:bg-white/20 transition-all"

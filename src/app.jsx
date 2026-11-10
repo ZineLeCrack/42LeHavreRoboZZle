@@ -43,6 +43,7 @@ export function App() {
   const [connected, setConnected] = useState(false);
   const [name, setName] = useState("");
   const [queued, setQueued] = useState(false);
+  const [queueLevel, setQueueLevel] = useState(1);
   const [notice, setNotice] = useState("");
 
   const [game, setGame] = useState(null);
@@ -72,7 +73,9 @@ export function App() {
           setConnected(true);
           break;
         case "queued":
+          setGame(null);
           setQueued(true);
+          setQueueLevel(msg.level);
           setNotice("");
           break;
         case "idle":
@@ -182,6 +185,7 @@ export function App() {
               name={name}
               connected={connected}
               queued={queued}
+              queueLevel={queueLevel}
               notice={notice}
               onPlay={() => send({ type: "join" })}
               onSolo={() => send({ type: "solo" })}
