@@ -19,14 +19,17 @@ function getSavedLevel() {
 }
 
 function getSocketUrl() {
-  if (import.meta.env.VITE_WS_URL)
-    return import.meta.env.VITE_WS_URL;
-
-  const proto = location.protocol === "https:" ? "wss" : "ws";
-  const url = new URL(`${proto}://${location.host}${import.meta.env.BASE_URL}ws`);
   const forced = new URLSearchParams(location.search).get("name");
+
+  const url = import.meta.env.VITE_WS_URL
+    ? new URL(import.meta.env.VITE_WS_URL)
+    : new URL(
+        `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}${import.meta.env.BASE_URL}ws`
+      );
+
   if (forced)
     url.searchParams.set("name", forced);
+
   return url.toString();
 }
 
