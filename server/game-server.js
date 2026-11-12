@@ -388,12 +388,26 @@ function localAddresses() {
   );
 }
 
+function cleanIp(ip) {
+  return String(ip || '').trim().replace(/^::ffff:/, '');
+}
+
+function getForwardedIp(req) {
+  const header = req.headers['x-forwarded-for'];
+  const value = Array.isArray(header) ? header[0] : header;
+  return value ? cleanIp(value.split(',')[0]) : '';
+}
+
 async function resolveName(req, url) {
   const forced = url.searchParams.get('name');
   if (forced)
     return forced.replace(/[\u0000-\u001f]/g, '').slice(0, 32) || 'player';
 
-  const ip = (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+  const forwardedIp = getForwardedIp(req);
+  if (forwardedIp)
+    return forwardedIp;
+
+  const ip = cleanIp(req.socket.remoteAddress);
   if (ip === '::1' || ip === '127.0.0.1' || localAddresses().has(ip))
     return shortName(os.hostname());
 
