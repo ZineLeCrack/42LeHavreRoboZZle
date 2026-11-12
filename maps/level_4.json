@@ -1,0 +1,23 @@
+{
+	"map": [
+		"b              b",
+		"                ",
+		"    rRRRRRRB    ",
+		"           R    ",
+		"           R    ",
+		"           R    ",
+		"           R    ",
+		"           R    ",
+		"           R    ",
+		"           R    ",
+		"                ",
+		"b              b"
+
+		],
+	"starting_pos": {
+		"x": 4,
+		"y": 2,
+		"dir": "right"
+	},
+	"functions": [3]
+}
