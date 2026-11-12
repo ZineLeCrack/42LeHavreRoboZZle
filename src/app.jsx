@@ -13,6 +13,11 @@ import { messages } from './messages'
 
 export const THEME = false;
 
+function getSavedLevel() {
+  const level = Number(localStorage.getItem("level"));
+  return Number.isInteger(level) && level >= 1 ? level : 1;
+}
+
 function getSocketUrl() {
   if (import.meta.env.VITE_WS_URL)
     return import.meta.env.VITE_WS_URL;
@@ -71,6 +76,9 @@ export function App() {
           wasConnected.current = true;
           setName(msg.name);
           setConnected(true);
+          break;
+        case "progress":
+          localStorage.setItem("level", String(msg.level));
           break;
         case "queued":
           setGame(null);
@@ -187,8 +195,8 @@ export function App() {
               queued={queued}
               queueLevel={queueLevel}
               notice={notice}
-              onPlay={() => send({ type: "join" })}
-              onSolo={() => send({ type: "solo" })}
+              onPlay={() => send({ type: "join", level: getSavedLevel() })}
+              onSolo={() => send({ type: "solo", level: getSavedLevel() })}
               onCancel={() => send({ type: "cancel" })}
             />
           )}

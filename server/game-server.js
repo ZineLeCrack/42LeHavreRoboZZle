@@ -31,6 +31,16 @@ function send(player, payload) {
     player.ws.send(JSON.stringify(payload));
 }
 
+function setProgress(player, level) {
+  player.level = level;
+  send(player, { type: 'progress', level });
+}
+
+function parseLevel(value) {
+  const level = Math.trunc(Number(value));
+  return level >= 1 && level <= NB_LEVEL ? level : 1;
+}
+
 async function readLevel(mapsDir, level) {
   const file = path.join(mapsDir, `level_${level}.json`);
   const value = JSON.parse(await fs.readFile(file, 'utf8'));
@@ -110,7 +120,7 @@ class Lobby {
     this.stack = [];
     this.currentInst = { ...NO_INST };
     for (const p of this.players)
-      p.level = level;
+      setProgress(p, level);
   }
 
   resetData() {
@@ -343,7 +353,7 @@ class Lobby {
           this.popUp = { type: 'win_game', level: done };
         else if (this.isTeam) {
           for (const p of this.players)
-            p.level = done + 1;
+            setProgress(p, done + 1);
           this.popUp = { type: 'win_level', level: done };
         } else {
           this.popUp = { type: 'win_level', level: done };
@@ -428,7 +438,7 @@ export function attachGameServer(httpServer, { mapsDir }) {
     const players = lobby.players;
     lobby.dissolve();
     for (const p of players) {
-      p.level = level;
+      setProgress(p, level);
       enqueue(p);
     }
     matchmake();
@@ -507,12 +517,14 @@ export function attachGameServer(httpServer, { mapsDir }) {
         switch (msg.type) {
           case 'join':
             if (player.lobby || player.queued) return;
+            player.level = parseLevel(msg.level);
             enqueue(player);
             matchmake();
             break;
 
           case 'solo':
             if (player.lobby || player.queued) return;
+            player.level = parseLevel(msg.level);
             createLobby([player]);
             break;
 

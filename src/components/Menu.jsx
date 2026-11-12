@@ -38,7 +38,7 @@ export function Menu({ name, connected, queued, queueLevel, notice, onPlay, onSo
             disabled={!connected}
             className="px-14 py-4 text-xl font-bold rounded-2xl shadow-lg bg-gradient-to-r from-amber-300 to-orange-400 text-slate-900 hover:brightness-110 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
-            Play
+            Duo
           </button>
           <button
             onClick={onSolo}
