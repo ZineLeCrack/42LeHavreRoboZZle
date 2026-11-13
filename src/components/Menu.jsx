@@ -1,7 +1,7 @@
 import React from 'react';
 import { Rocket, SPACE_BG } from './Sprites';
 
-export function Menu({ name, connected, queued, queueLevel, notice, onPlay, onSolo, onCancel }) {
+export function Menu({ name, connected, queued, queueLevel, notice, onPlay, onSolo, onCancel, onResetProgress }) {
   return (
     <div className="w-screen h-screen flex flex-col justify-center items-center gap-6 px-4 text-white" style={SPACE_BG}>
       <Rocket angle={-45} className="w-28 h-28" />
@@ -46,6 +46,12 @@ export function Menu({ name, connected, queued, queueLevel, notice, onPlay, onSo
             className="px-14 py-3 text-lg font-semibold rounded-2xl shadow-lg bg-white/10 ring-1 ring-white/20 hover:bg-white/20 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             Solo
+          </button>
+          <button
+            onClick={onResetProgress}
+            className="px-8 py-2 text-sm font-semibold rounded-xl bg-rose-500/20 ring-1 ring-rose-300/30 hover:bg-rose-500/30 transition-all"
+          >
+            Réinitialiser ma progression
           </button>
         </div>
       )}

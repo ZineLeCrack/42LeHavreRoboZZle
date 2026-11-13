@@ -15,6 +15,7 @@ export function Composition(props) {
                   key={indexInst}
                   inst={inst}
                   current={props.currentInst.x === indexFunc && props.currentInst.y === indexInst}
+                  disabled={props.isTeam && ((indexInst + 1) % 2 !== props.playerIndex % 2)}
                   onClick={() => props.onEdit(indexFunc, indexInst)}
                 />
               ))}

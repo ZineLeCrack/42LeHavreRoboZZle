@@ -90,6 +90,7 @@ class Lobby {
     return {
       type: 'state',
       players: this.players.map((p) => p.name),
+      isTeam: this.isTeam,
       level: this.level,
       instructions: this.instructions,
       data: this.data,
@@ -104,10 +105,11 @@ class Lobby {
 
   broadcast() {
     if (this.closed) return;
-    const message = JSON.stringify(this.snapshot());
     for (const p of this.players) {
-      if (p.ws.readyState === 1)
-        p.ws.send(message);
+      if (p.ws.readyState === 1) {
+        const playerIndex = this.players.indexOf(p) + 1;
+        p.ws.send(JSON.stringify({ ...this.snapshot(), playerIndex }));
+      }
     }
   }
 
@@ -189,7 +191,17 @@ class Lobby {
         if (!Number.isInteger(func) || !Number.isInteger(index) || typeof tool !== 'string')
           return;
         const inst = this.instructions[func]?.[index];
-        if (!inst || !this.applyTool(inst, tool)) return;
+        if (!inst) return;
+
+        // En duo, les positions sont numérotées à partir de 1 :
+        // joueur 1 = positions impaires, joueur 2 = positions paires.
+        if (this.isTeam) {
+          const playerIndex = this.players.indexOf(player) + 1;
+          if (playerIndex === 1 && (index + 1) % 2 === 0) return;
+          if (playerIndex === 2 && (index + 1) % 2 !== 0) return;
+        }
+
+        if (!this.applyTool(inst, tool)) return;
         this.broadcast();
         break;
       }

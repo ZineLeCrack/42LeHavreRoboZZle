@@ -164,6 +164,10 @@ export function App() {
   };
 
   const setLevel = (level) => send({ type: "setLevel", level });
+  const resetProgress = () => {
+    localStorage.setItem("level", "1");
+    setNotice("Progression réinitialisée au niveau 1.");
+  };
   const closePopUp = () => send({ type: "popup" });
   const leaveGame = () => send({ type: "leave" });
 
@@ -184,7 +188,14 @@ export function App() {
                 <div className="flex flex-col justify-center items-center h-full w-full max-w-[500px]">
                   <Level level={game.level} setLevel={setLevel}></Level>
                   <Canva data={game.data}></Canva>
-                  <Composition play={game.play} instance={game} onEdit={editTile} currentInst={game.currentInst}></Composition>
+                  <Composition
+                    play={game.play}
+                    instance={game}
+                    onEdit={editTile}
+                    currentInst={game.currentInst}
+                    isTeam={game.isTeam}
+                    playerIndex={game.playerIndex}
+                  />
                   <Controls game={game} play={game.play} paused={game.paused} setPlay={setPlay} onReset={resetRun} data={game.data} setDeltaTime={setDeltaTime} deltaTime={game.deltaTime}></Controls>
                   <Toolbar functions={game.instructions} selected={selected} setSelected={setSelected}></Toolbar>
                 </div>
@@ -201,6 +212,7 @@ export function App() {
               onPlay={() => send({ type: "join", level: getSavedLevel() })}
               onSolo={() => send({ type: "solo", level: getSavedLevel() })}
               onCancel={() => send({ type: "cancel" })}
+              onResetProgress={resetProgress}
             />
           )}
         </div>
