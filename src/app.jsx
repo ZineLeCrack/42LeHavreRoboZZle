@@ -18,8 +18,17 @@ function getSavedLevel() {
   return Number.isInteger(level) && level >= 1 ? level : 1;
 }
 
+function getSavedPseudo() {
+  try {
+    return localStorage.getItem("pseudo") || "";
+  } catch {
+    return "";
+  }
+}
+
 function getSocketUrl() {
-  const forced = new URLSearchParams(location.search).get("name");
+  // Priorité : ?name= dans l'URL, puis le pseudo enregistré, sinon le serveur devine (hostname).
+  const forced = new URLSearchParams(location.search).get("name") || getSavedPseudo();
 
   const url = import.meta.env.VITE_WS_URL
     ? new URL(import.meta.env.VITE_WS_URL)
@@ -50,6 +59,8 @@ function getPopUpContent(popUp) {
 export function App() {
   const [connected, setConnected] = useState(false);
   const [name, setName] = useState("");
+  const [pseudo, setPseudoState] = useState(getSavedPseudo());
+  const [socketKey, setSocketKey] = useState(0);
   const [queued, setQueued] = useState(false);
   const [queueLevel, setQueueLevel] = useState(1);
   const [notice, setNotice] = useState("");
@@ -125,6 +136,8 @@ export function App() {
         }
       };
       ws.onclose = () => {
+        // Ancienne connexion remplacée (changement de pseudo) : on ignore.
+        if (wsRef.current !== ws) return;
         setConnected(false);
         setQueued(false);
         setGame(null);
@@ -142,7 +155,7 @@ export function App() {
       clearTimeout(retry);
       if (ws) ws.close();
     };
-  }, []);
+  }, [socketKey]);
 
   useEffect(() => {
     setSelected("");
@@ -168,6 +181,22 @@ export function App() {
     localStorage.setItem("level", "1");
     setNotice("Progression réinitialisée au niveau 1.");
   };
+
+  const changePseudo = (value) => {
+    const clean = String(value || "").trim().slice(0, 32);
+    try {
+      if (clean)
+        localStorage.setItem("pseudo", clean);
+      else
+        localStorage.removeItem("pseudo");
+    } catch {}
+    setPseudoState(clean);
+    setNotice("");
+    wasConnected.current = false;
+    setConnected(false);
+    setSocketKey((k) => k + 1); // reconnexion avec le nouveau pseudo
+  };
+
   const closePopUp = () => send({ type: "popup" });
   const leaveGame = () => send({ type: "leave" });
 
@@ -205,6 +234,7 @@ export function App() {
           ) : (
             <Menu
               name={name}
+              pseudo={pseudo}
               connected={connected}
               queued={queued}
               queueLevel={queueLevel}
@@ -213,6 +243,7 @@ export function App() {
               onSolo={() => send({ type: "solo", level: getSavedLevel() })}
               onCancel={() => send({ type: "cancel" })}
               onResetProgress={resetProgress}
+              onPseudo={changePseudo}
             />
           )}
         </div>

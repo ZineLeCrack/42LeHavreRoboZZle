@@ -404,25 +404,18 @@ function cleanIp(ip) {
   return String(ip || '').trim().replace(/^::ffff:/, '');
 }
 
+function isLocalIp(ip) {
+  return ip === '::1' || ip === '127.0.0.1' || localAddresses().has(ip);
+}
+
 function getForwardedIp(req) {
   const header = req.headers['x-forwarded-for'];
   const value = Array.isArray(header) ? header[0] : header;
   return value ? cleanIp(value.split(',')[0]) : '';
 }
 
-async function resolveName(req, url) {
-  const forced = url.searchParams.get('name');
-  if (forced)
-    return forced.replace(/[\u0000-\u001f]/g, '').slice(0, 32) || 'player';
-
-  const forwardedIp = getForwardedIp(req);
-  if (forwardedIp)
-    return forwardedIp;
-
-  const ip = cleanIp(req.socket.remoteAddress);
-  if (ip === '::1' || ip === '127.0.0.1' || localAddresses().has(ip))
-    return shortName(os.hostname());
-
+async function reverseName(ip) {
+  if (!ip) return '';
   try {
     const names = await Promise.race([
       dns.reverse(ip),
@@ -431,6 +424,30 @@ async function resolveName(req, url) {
     if (names && names[0])
       return shortName(names[0]);
   } catch {}
+  return '';
+}
+
+// Ordre de priorité :
+// 1. ?name=... dans l'URL (pseudo choisi par le joueur)
+// 2. hostname de la machine cliente (reverse DNS de son IP, y compris derrière un proxy)
+// 3. hostname du serveur si le client est sur la même machine
+// 4. l'IP brute en dernier recours
+async function resolveName(req, url) {
+  const forced = url.searchParams.get('name');
+  if (forced) {
+    const clean = forced.replace(/[\u0000-\u001f]/g, '').trim().slice(0, 32);
+    if (clean) return clean;
+  }
+
+  const ip = getForwardedIp(req) || cleanIp(req.socket.remoteAddress);
+
+  if (ip && isLocalIp(ip))
+    return shortName(os.hostname());
+
+  const host = await reverseName(ip);
+  if (host)
+    return host;
+
   return ip || 'player';
 }
 
@@ -441,6 +458,17 @@ function canPair(a, b) {
 export function attachGameServer(httpServer, { mapsDir }) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
   const queue = [];
+  const usedNames = new Set();
+
+  // Si deux joueurs ont le même nom, on ajoute un suffixe : nom, nom-2, nom-3...
+  function reserveName(base) {
+    let name = base;
+    let n = 2;
+    while (usedNames.has(name))
+      name = `${base}-${n++}`;
+    usedNames.add(name);
+    return name;
+  }
 
   httpServer.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url, 'http://localhost');
@@ -524,12 +552,19 @@ export function attachGameServer(httpServer, { mapsDir }) {
     const player = { ws, name: 'player', lobby: null, queued: false, level: 1, lastMate: null };
     ws.on('error', () => {});
 
-    const ready = resolveName(req, url).then((name) => {
-      player.name = name;
-      send(player, { type: 'welcome', name });
+    let closed = false;
+    let reserved = false;
+
+    const ready = resolveName(req, url).then((base) => {
+      if (closed) return;
+      player.name = reserveName(base);
+      reserved = true;
+      send(player, { type: 'welcome', name: player.name });
     });
 
     ws.on('close', () => {
+      closed = true;
+      if (reserved) usedNames.delete(player.name);
       leaveQueue(player);
       if (player.lobby) player.lobby.close(player);
     });

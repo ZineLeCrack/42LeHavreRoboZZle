@@ -1,7 +1,15 @@
 import React from 'react';
+import { useState } from 'preact/hooks';
 import { Rocket, SPACE_BG } from './Sprites';
 
-export function Menu({ name, connected, queued, queueLevel, notice, onPlay, onSolo, onCancel, onResetProgress }) {
+export function Menu({ name, pseudo, connected, queued, queueLevel, notice, onPlay, onSolo, onCancel, onResetProgress, onPseudo }) {
+  const [draft, setDraft] = useState(pseudo || "");
+
+  const submitPseudo = (event) => {
+    event.preventDefault();
+    onPseudo(draft);
+  };
+
   return (
     <div className="w-screen h-screen flex flex-col justify-center items-center gap-6 px-4 text-white" style={SPACE_BG}>
       <Rocket angle={-45} className="w-28 h-28" />
@@ -33,6 +41,22 @@ export function Menu({ name, connected, queued, queueLevel, notice, onPlay, onSo
         </>
       ) : (
         <div className="flex flex-col items-center gap-4">
+          <form onSubmit={submitPseudo} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={draft}
+              maxLength={32}
+              placeholder="Pseudo (auto : nom de la machine)"
+              onInput={(e) => setDraft(e.target.value)}
+              className="px-4 py-2 w-64 text-sm rounded-xl bg-white/10 ring-1 ring-white/20 placeholder-slate-400 text-white outline-none focus:ring-amber-300"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-semibold rounded-xl bg-white/10 ring-1 ring-white/20 hover:bg-white/20 transition-all"
+            >
+              OK
+            </button>
+          </form>
           <button
             onClick={onPlay}
             disabled={!connected}
